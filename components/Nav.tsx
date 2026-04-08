@@ -4,55 +4,61 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const links = [
-  { href: '/', label: 'Shelf' },
-  { href: '/add', label: '+ Add Book' },
-  { href: '/stats', label: 'Stats' },
+  { href: '/', label: 'My Shelf' },
+  { href: '/add', label: '+ Log a Book' },
+  { href: '/stats', label: 'Reading Stats' },
 ];
 
 export default function Nav() {
   const pathname = usePathname();
 
   return (
-    <header style={{ background: '#5c3d2e' }} className="sticky top-0 z-10 shadow-md">
-      <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-2xl">📚</span>
-          <span
-            className="text-xl font-bold tracking-wide"
-            style={{ color: '#f5deb3', fontFamily: 'Georgia, serif' }}
-          >
-            Reading Log
-          </span>
-        </Link>
-        <nav className="flex items-center gap-1">
-          {links.map(({ href, label }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
-                style={{
-                  background: active ? '#f5deb3' : 'transparent',
-                  color: active ? '#5c3d2e' : '#f5deb3',
-                  border: active ? 'none' : '1px solid transparent',
-                }}
-                onMouseEnter={e => {
-                  if (!active) {
-                    (e.target as HTMLElement).style.background = 'rgba(245,222,179,0.15)';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!active) {
-                    (e.target as HTMLElement).style.background = 'transparent';
-                  }
-                }}
+    <header style={{ background: '#1e0e05', borderBottom: '3px solid #4a2c17' }}>
+      <div className="max-w-5xl mx-auto px-6 py-4">
+        {/* Top row: logo */}
+        <div className="flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <span className="text-2xl">📚</span>
+            <div>
+              <div
+                className="text-xl font-bold tracking-wide leading-none"
+                style={{ color: '#f0c988', fontFamily: 'Georgia, serif' }}
               >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+                Reading Log
+              </div>
+              <div className="text-xs italic mt-0.5" style={{ color: '#8b5e3c' }}>
+                your personal reading journal
+              </div>
+            </div>
+          </Link>
+
+          <nav className="flex items-center gap-1">
+            {links.map(({ href, label }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className="px-4 py-2 text-sm transition-all"
+                  style={{
+                    color: active ? '#f0c988' : '#c4a882',
+                    borderBottom: active ? '2px solid #c9721e' : '2px solid transparent',
+                    fontFamily: 'Georgia, serif',
+                  }}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Decorative divider */}
+        <div className="mt-3 flex items-center gap-2">
+          <div className="flex-1 border-t" style={{ borderColor: '#3d2010' }} />
+          <span className="text-xs" style={{ color: '#5a3520' }}>✦ ✦ ✦</span>
+          <div className="flex-1 border-t" style={{ borderColor: '#3d2010' }} />
+        </div>
       </div>
     </header>
   );

@@ -15,12 +15,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col" style={{ background: '#fdf6ee', color: '#3b2e1e' }}>
+      <body className="min-h-full flex flex-col" style={{ background: '#f5e6cc', color: '#2d1a0a' }}>
         <BookProvider>
           <Nav />
           <main className="flex-1">{children}</main>
-          <footer className="text-center py-6 text-sm" style={{ color: '#a07850' }}>
-            your reading journey ✦
+          <footer className="text-center py-8 border-t" style={{ borderColor: '#d4b896', background: '#ede0c8' }}>
+            <p className="text-sm italic" style={{ color: '#8b5e3c' }}>
+              🕯️ &nbsp;a quiet place for your reading life&nbsp; 🕯️
+            </p>
           </footer>
         </BookProvider>
       </body>
