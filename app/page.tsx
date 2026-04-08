@@ -1,65 +1,176 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+import Link from 'next/link';
+import { useBooks } from '@/lib/BookContext';
+import { BookStatus } from '@/lib/types';
+
+const STATUS_LABELS: Record<BookStatus, string> = {
+  'reading': 'Currently Reading',
+  'finished': 'Finished',
+  'want-to-read': 'Want to Read',
+};
+
+const STATUS_COLORS: Record<BookStatus, string> = {
+  'reading': '#d97706',
+  'finished': '#16a34a',
+  'want-to-read': '#7c3aed',
+};
+
+const STATUS_BG: Record<BookStatus, string> = {
+  'reading': '#fef3c7',
+  'finished': '#dcfce7',
+  'want-to-read': '#ede9fe',
+};
+
+function StarRating({ rating }: { rating?: number }) {
+  if (!rating) return null;
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <span className="text-sm" style={{ color: '#d97706' }}>
+      {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
+    </span>
+  );
+}
+
+function BookCard({ book }: { book: ReturnType<typeof useBooks>['books'][0] }) {
+  return (
+    <Link href={`/book/${book.id}`} className="block group">
+      <div
+        className="rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+        style={{ background: '#fff8f0', border: '1px solid #e8d5b7' }}
+      >
+        {/* Cover */}
+        <div
+          className="w-full h-48 flex items-center justify-center text-5xl"
+          style={{ background: book.coverImage ? 'transparent' : '#f0e0cc' }}
+        >
+          {book.coverImage ? (
+            <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
+          ) : (
+            <span>📖</span>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="p-4">
+          <h3
+            className="font-bold text-base leading-tight mb-1"
+            style={{ color: '#3b2e1e', fontFamily: 'Georgia, serif' }}
+          >
+            {book.title}
+          </h3>
+          <p className="text-sm mb-2" style={{ color: '#7a5c3e' }}>{book.author}</p>
+          <div className="flex items-center justify-between">
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{
+                background: STATUS_BG[book.status],
+                color: STATUS_COLORS[book.status],
+              }}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              {STATUS_LABELS[book.status]}
+            </span>
+            <StarRating rating={book.rating} />
+          </div>
+          {book.genre && (
+            <p className="text-xs mt-2" style={{ color: '#a07850' }}>{book.genre}</p>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+const FILTERS: { label: string; value: BookStatus | 'all' }[] = [
+  { label: 'All Books', value: 'all' },
+  { label: 'Reading', value: 'reading' },
+  { label: 'Finished', value: 'finished' },
+  { label: 'Want to Read', value: 'want-to-read' },
+];
+
+export default function ShelfPage() {
+  const { books } = useBooks();
+  const [filter, setFilter] = useState<BookStatus | 'all'>('all');
+
+  const filtered = filter === 'all' ? books : books.filter(b => b.status === filter);
+
+  const counts = {
+    all: books.length,
+    reading: books.filter(b => b.status === 'reading').length,
+    finished: books.filter(b => b.status === 'finished').length,
+    'want-to-read': books.filter(b => b.status === 'want-to-read').length,
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto px-6 py-10">
+      {/* Header */}
+      <div className="mb-8">
+        <h1
+          className="text-4xl font-bold mb-2"
+          style={{ color: '#3b2e1e', fontFamily: 'Georgia, serif' }}
+        >
+          My Shelf
+        </h1>
+        <p style={{ color: '#a07850' }}>
+          {counts.all} {counts.all === 1 ? 'book' : 'books'} in your collection
+        </p>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        {FILTERS.map(({ label, value }) => {
+          const active = filter === value;
+          return (
+            <button
+              key={value}
+              onClick={() => setFilter(value)}
+              className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+              style={{
+                background: active ? '#5c3d2e' : '#fff8f0',
+                color: active ? '#f5deb3' : '#7a5c3e',
+                border: `1px solid ${active ? '#5c3d2e' : '#e8d5b7'}`,
+              }}
             >
-              Learning
-            </a>{" "}
-            center.
+              {label}
+              <span
+                className="ml-1.5 text-xs rounded-full px-1.5 py-0.5"
+                style={{
+                  background: active ? 'rgba(245,222,179,0.25)' : '#f0e0cc',
+                  color: active ? '#f5deb3' : '#a07850',
+                }}
+              >
+                {counts[value]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Grid */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-6xl mb-4">📚</p>
+          <p className="text-lg mb-2" style={{ color: '#5c3d2e', fontFamily: 'Georgia, serif' }}>
+            No books here yet
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <p className="mb-6" style={{ color: '#a07850' }}>
+            Start adding books to your collection
+          </p>
+          <Link
+            href="/add"
+            className="inline-block px-6 py-3 rounded-full font-medium transition-all"
+            style={{ background: '#5c3d2e', color: '#f5deb3' }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Add your first book
+          </Link>
         </div>
-      </main>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
+          {filtered.map(book => (
+            <BookCard key={book.id} book={book} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
