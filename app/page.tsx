@@ -82,8 +82,15 @@ const FILTERS: { label: string; value: BookStatus | 'all' }[] = [
 export default function ShelfPage() {
   const { books } = useBooks();
   const [filter, setFilter] = useState<BookStatus | 'all'>('all');
+  const [search, setSearch] = useState('');
 
-  const filtered = filter === 'all' ? books : books.filter(b => b.status === filter);
+  const filtered = books
+    .filter(b => filter === 'all' || b.status === filter)
+    .filter(b =>
+      !search.trim() ||
+      b.title.toLowerCase().includes(search.toLowerCase()) ||
+      b.author.toLowerCase().includes(search.toLowerCase())
+    );
   const currentlyReading = books.filter(b => b.status === 'reading');
 
   const counts = {
@@ -160,6 +167,24 @@ export default function ShelfPage() {
         >
           + Add Book
         </Link>
+      </div>
+
+      {/* Search */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by title or author..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full sm:w-80 px-4 py-2.5 rounded-full text-sm"
+          style={{
+            background: '#fff8f0',
+            border: '1px solid #e8d5b7',
+            color: '#3b2e1e',
+            fontFamily: 'Georgia, serif',
+            outline: 'none',
+          }}
+        />
       </div>
 
       {/* Filter tabs */}
