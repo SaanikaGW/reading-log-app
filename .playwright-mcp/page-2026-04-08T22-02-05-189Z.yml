@@ -1,0 +1,26 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "📚 Reading Log your personal reading journal" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]: 📚
+          - generic [ref=e7]:
+            - generic [ref=e8]: Reading Log
+            - generic [ref=e9]: your personal reading journal
+        - navigation [ref=e10]:
+          - link "My Shelf" [ref=e11] [cursor=pointer]:
+            - /url: /
+          - link "+ Log a Book" [ref=e12] [cursor=pointer]:
+            - /url: /add
+          - link "Reading Stats" [ref=e13] [cursor=pointer]:
+            - /url: /stats
+      - generic [ref=e16]: ✦ ✦ ✦
+  - main [ref=e18]:
+    - generic [ref=e98]:
+      - generic [ref=e99]: 🌸
+      - heading "Added to your shelf!" [level=2] [ref=e153]
+      - paragraph [ref=e154]: heading back to your books...
+  - contentinfo [ref=e95]:
+    - paragraph [ref=e96]: 🕯️ a quiet place for your reading life 🕯️
+  - alert [ref=e97]
