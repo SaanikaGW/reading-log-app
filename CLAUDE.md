@@ -1,61 +1,79 @@
 # Reading Log
 
-A warm, cozy personal reading journal built with **Next.js 16** and **Tailwind CSS**. Track every book you're reading, have finished, or want to read — with ratings, notes, dates, and a stats dashboard.
+A warm, cozy personal reading journal built with **Next.js 16**, **Tailwind CSS**, **Clerk**, and **Supabase**. Track every book you're reading, have finished, or want to read — with ratings, notes, and a stats dashboard.
 
 **Live URL:** https://reading-log-app-six.vercel.app  
 **GitHub:** https://github.com/SaanikaGW/reading-log-app
 
 ---
 
-## Project Overview
+## Stack
 
-This app is a client-side reading tracker. All data lives in React Context (in-memory state) — no database yet. It resets on page refresh. The goal is to exercise Next.js routing, component architecture, forms, and Tailwind styling.
+- **Framework:** Next.js 16 (App Router, Server Components, Server Actions)
+- **Styling:** Tailwind CSS v4
+- **Auth:** Clerk (sign-up, sign-in, sign-out via `@clerk/nextjs`)
+- **Database:** Supabase (PostgreSQL), scoped to logged-in user via `user_id`
+- **External API:** Open Library (no key required) — search millions of books
 
 ---
 
 ## Pages
 
-### `/` — Shelf (homepage)
-**File:** `app/page.tsx`  
-The main view. Displays all books as a warm card grid. Features:
-- "Currently Reading" hero section at the top
-- Filter tabs: All / Reading / Finished / Want to Read
-- Live search by title or author
-- Each card links to the book's detail page
-
-### `/add` — Add a Book
-**File:** `app/add/page.tsx`  
-A form to log a new book. Fields: title, author, genre, page count, status, start/finish dates, star rating (interactive), notes, and optional cover image URL. On submit, adds the book to context state and redirects to the shelf.
-
-### `/book/[id]` — Book Detail
-**File:** `app/book/[id]/page.tsx`  
-Dynamic route. Displays full details for a single book: cover, title, author, genre, page count, dates, rating, and personal notes. Allows updating status and deleting the book. Uses React's `use(params)` to read the dynamic segment (Next.js 16 convention).
-
-### `/stats` — Reading Stats
-**File:** `app/stats/page.tsx`  
-A dashboard showing: total books finished, currently reading, want-to-read, total pages read, average rating, top genres, rating distribution (bar chart), and a list of finished books.
+| Route | File | Notes |
+|-------|------|-------|
+| `/` | `app/page.tsx` | Landing (logged out) or Shelf (logged in) — Server Component |
+| `/search` | `app/search/page.tsx` | Search Open Library, save to shelf — Client Component |
+| `/add` | `app/add/page.tsx` | Manually log a book — Client Component with server action |
+| `/book/[id]` | `app/book/[id]/page.tsx` | Book detail + OL description — Server Component |
+| `/stats` | `app/stats/page.tsx` | Reading stats dashboard — Server Component |
+| `/sign-in` | `app/sign-in/[[...sign-in]]/page.tsx` | Clerk sign-in |
+| `/sign-up` | `app/sign-up/[[...sign-up]]/page.tsx` | Clerk sign-up |
+| `/api/search` | `app/api/search/route.ts` | Proxies Open Library search |
+| `/api/book/[key]` | `app/api/book/[key]/route.ts` | Proxies Open Library work detail |
 
 ---
 
 ## Data Model
 
+### Supabase `books` table
+
+```sql
+id          uuid primary key
+user_id     text not null         -- Clerk user ID
+title       text not null
+author      text not null
+genre       text
+page_count  integer
+start_date  text
+finish_date text
+status      text                  -- 'reading' | 'finished' | 'want-to-read'
+rating      integer               -- 1–5
+notes       text
+cover_image text
+ol_key      text                  -- Open Library /works/OL... key
+created_at  timestamptz
+```
+
+Row Level Security is enabled — users can only access their own rows.
+
+### TypeScript type (`lib/types.ts`)
+
 ```ts
 interface Book {
-  id: string;           // timestamp-based unique ID
+  id: string;
   title: string;
   author: string;
   genre: string;
   pageCount: number;
-  startDate?: string;   // ISO date string e.g. "2024-01-15"
-  finishDate?: string;  // ISO date string
+  startDate?: string;
+  finishDate?: string;
   status: 'reading' | 'finished' | 'want-to-read';
-  rating?: number;      // 1–5 stars
-  notes?: string;       // personal review / thoughts
-  coverImage?: string;  // optional image URL
+  rating?: number;
+  notes?: string;
+  coverImage?: string;
+  ol_key?: string;
 }
 ```
-
-State is managed in `lib/BookContext.tsx` using React Context + `useState`. The context wraps the entire app via `app/layout.tsx`. Four sample books are pre-loaded so the app isn't empty on first load.
 
 ---
 
@@ -63,39 +81,52 @@ State is managed in `lib/BookContext.tsx` using React Context + `useState`. The 
 
 ```
 app/
-  layout.tsx          # Root layout: wraps app in BookProvider, renders Nav
-  page.tsx            # Shelf page (client component)
-  add/page.tsx        # Add book form (client component)
-  book/[id]/page.tsx  # Book detail — dynamic route (client component)
-  stats/page.tsx      # Stats dashboard (client component)
-  globals.css         # Global styles + Tailwind import
+  layout.tsx                  # ClerkProvider wrapper
+  page.tsx                    # Server Component: landing or shelf
+  add/page.tsx                # Client Component: manual log form
+  search/page.tsx             # Client Component: Open Library search
+  book/[id]/page.tsx          # Server Component: detail + OL info
+  stats/page.tsx              # Server Component: stats dashboard
+  sign-in/[[...sign-in]]/     # Clerk sign-in page
+  sign-up/[[...sign-up]]/     # Clerk sign-up page
+  api/search/route.ts         # Open Library search proxy
+  api/book/[key]/route.ts     # Open Library works detail proxy
+  globals.css
 
 components/
-  Nav.tsx             # Sticky top nav with active link highlighting
-
+  Nav.tsx                     # Auth-aware nav with UserButton
+  ShelfClient.tsx             # Interactive shelf (filter, search, sort)
+  BookDetailClient.tsx        # Delete + status update buttons
+  
 lib/
-  BookContext.tsx     # React Context: books state + addBook/updateBook/deleteBook/getBook
-  types.ts            # TypeScript types: Book, BookStatus
+  actions.ts                  # Server actions: getBooks, addBook, updateBook, deleteBook
+  supabase.ts                 # Supabase client factory
+  types.ts                    # Book, BookStatus types
 
-.claude/
-  settings.json       # Playwright MCP config for browser testing
+proxy.ts                      # Clerk route protection (Next.js 16)
 ```
-
-All pages are Client Components (`'use client'`) because they read from React Context.
 
 ---
 
 ## Style
 
-- **Palette:** cream `#fdf6ee` · dark brown `#3b2e1e` · warm brown `#5c3d2e` · amber `#d97706` · wheat `#f5deb3`
+- **Palette:** wheat `#f5e6cc` · cream `#fdf5e8` · dark brown `#2d1a0a` · amber `#c9721e` · honey `#f0c988`
 - **Font:** Georgia serif throughout
 - **Feel:** cozy and warm — like a well-loved notebook on a rainy afternoon
-- **Cards:** rounded corners, soft shadows, warm hover lift effect
 
 ---
 
-## Key Conventions
+## Environment Variables
 
-- Dynamic route params use `use(params)` from React (Next.js 16 client component pattern)
-- No `useEffect` for data — all state lives in Context and is passed via props or consumed directly
-- Tailwind v4 with `@import "tailwindcss"` in globals.css (no config file needed)
+Required in `.env.local` (and Vercel environment settings):
+
+```
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+```
