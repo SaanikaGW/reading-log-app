@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { BookProvider } from '@/lib/BookContext';
+import { ClerkProvider } from '@clerk/nextjs';
 import Nav from '@/components/Nav';
 
 export const metadata: Metadata = {
@@ -14,9 +14,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col" style={{ background: '#f5e6cc', color: '#2d1a0a' }}>
-        <BookProvider>
+    <ClerkProvider>
+      <html lang="en" className="h-full">
+        <body className="min-h-full flex flex-col" style={{ background: '#f5e6cc', color: '#2d1a0a' }}>
           <Nav />
           <main className="flex-1">{children}</main>
           <footer className="text-center py-8 border-t" style={{ borderColor: '#d4b896', background: '#ede0c8' }}>
@@ -24,8 +24,8 @@ export default function RootLayout({
               🕯️ &nbsp;a quiet place for your reading life&nbsp; 🕯️
             </p>
           </footer>
-        </BookProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

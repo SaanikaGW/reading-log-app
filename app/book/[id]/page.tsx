@@ -1,51 +1,47 @@
-'use client';
-
-import { use } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useBooks } from '@/lib/BookContext';
+import { notFound } from 'next/navigation';
+import { getBook } from '@/lib/actions';
 import { BookStatus } from '@/lib/types';
+import BookDetailClient from '@/components/BookDetailClient';
 
 const STATUS_LABELS: Record<BookStatus, string> = {
-  'reading': '📖 Currently Reading',
-  'finished': '✅ Finished',
+  reading: '📖 Currently Reading',
+  finished: '✅ Finished',
   'want-to-read': '🔖 Want to Read',
 };
 
-const STATUS_COLORS: Record<BookStatus, string> = {
-  'reading': '#c9721e',
-  'finished': '#2d7a3a',
-  'want-to-read': '#5c3d8f',
-};
+interface OLDetail {
+  description?: string | { value: string };
+  subjects?: string[];
+  first_sentence?: { value: string };
+}
 
-export default function BookDetailPage({
+async function getOLDetail(olKey: string): Promise<OLDetail | null> {
+  try {
+    const res = await fetch(`https://openlibrary.org${olKey}.json`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export default async function BookDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
-  const { getBook, deleteBook, updateBook } = useBooks();
-  const router = useRouter();
-  const book = getBook(id);
+  const { id } = await params;
+  const book = await getBook(id);
+  if (!book) notFound();
 
-  if (!book) {
-    return (
-      <div className="max-w-2xl mx-auto px-6 py-20 text-center">
-        <p className="text-6xl mb-4">🔍</p>
-        <h2 className="text-2xl font-bold mb-2 italic" style={{ color: '#2d1a0a', fontFamily: 'Georgia, serif' }}>
-          Book not found
-        </h2>
-        <Link href="/" style={{ color: '#8b5e3c' }}>← back to shelf</Link>
-      </div>
-    );
-  }
-
-  const handleDelete = () => {
-    if (confirm(`Remove "${book.title}" from your shelf?`)) {
-      deleteBook(id);
-      router.push('/');
-    }
-  };
+  const olDetail = book.ol_key ? await getOLDetail(book.ol_key) : null;
+  const description = olDetail?.description
+    ? typeof olDetail.description === 'string'
+      ? olDetail.description
+      : olDetail.description.value
+    : null;
+  const subjects = olDetail?.subjects?.slice(0, 6) ?? [];
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
@@ -61,25 +57,21 @@ export default function BookDetailPage({
         className="rounded-2xl overflow-hidden"
         style={{ background: '#fdf5e8', border: '1px solid #d4b896', boxShadow: '0 4px 16px rgba(45,26,10,0.12)' }}
       >
-        {/* Header band */}
-        <div style={{ height: '4px', background: `linear-gradient(90deg, #2d1a0a, #c9721e, #f0c988)` }} />
+        <div style={{ height: '4px', background: 'linear-gradient(90deg, #2d1a0a, #c9721e, #f0c988)' }} />
 
-        {/* Cover + title */}
         <div className="flex gap-6 p-8" style={{ background: '#f5e6cc', borderBottom: '1px solid #d4b896' }}>
           <div
-            className="flex-shrink-0 w-28 h-40 rounded-xl flex items-center justify-center text-4xl shadow-lg"
+            className="flex-shrink-0 w-28 h-40 rounded-xl flex items-center justify-center text-4xl shadow-lg overflow-hidden"
             style={{ background: book.coverImage ? 'transparent' : '#e8d5b7', border: '1px solid #d4b896' }}
           >
             {book.coverImage
-              ? <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover rounded-xl" />
+              ? <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
               : '📖'
             }
           </div>
 
           <div className="flex-1 min-w-0">
-            {/* Decorative top */}
             <div className="text-lg mb-2">🌿</div>
-
             <h1
               className="text-2xl font-bold leading-tight mb-1"
               style={{ color: '#2d1a0a', fontFamily: 'Georgia, serif' }}
@@ -87,14 +79,12 @@ export default function BookDetailPage({
               {book.title}
             </h1>
             <p className="italic mb-3" style={{ color: '#8b5e3c' }}>by {book.author}</p>
-
             <span
               className="inline-block text-sm px-3 py-1 rounded-lg font-medium mb-3"
               style={{ background: '#2d1a0a', color: '#f0c988' }}
             >
               {STATUS_LABELS[book.status]}
             </span>
-
             {book.rating && (
               <div className="flex gap-0.5 mb-2">
                 {[1, 2, 3, 4, 5].map(n => (
@@ -102,7 +92,6 @@ export default function BookDetailPage({
                 ))}
               </div>
             )}
-
             {book.genre && (
               <p className="text-sm italic" style={{ color: '#a07850' }}>🏷️ {book.genre}</p>
             )}
@@ -110,8 +99,7 @@ export default function BookDetailPage({
         </div>
 
         <div className="p-8 space-y-7">
-
-          {/* Stats */}
+          {/* Stats row */}
           <div className="grid grid-cols-3 gap-3">
             {book.pageCount > 0 && (
               <div className="rounded-xl p-3 text-center" style={{ background: '#f5e6cc', border: '1px solid #d4b896' }}>
@@ -140,7 +128,7 @@ export default function BookDetailPage({
             )}
           </div>
 
-          {/* Notes */}
+          {/* Personal notes */}
           {book.notes && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -153,61 +141,49 @@ export default function BookDetailPage({
                 style={{ background: '#f5e6cc', border: '1px solid #d4b896', borderLeft: '3px solid #c9721e' }}
               >
                 <p className="italic leading-relaxed" style={{ color: '#4a2c17', fontFamily: 'Georgia, serif', lineHeight: '1.9' }}>
-                  "{book.notes}"
+                  &ldquo;{book.notes}&rdquo;
                 </p>
               </div>
             </div>
           )}
 
-          {/* Update status */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span>📌</span>
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#8b5e3c' }}>Update Status</span>
-              <div className="flex-1 border-t border-dashed" style={{ borderColor: '#d4b896' }} />
+          {/* Open Library description */}
+          {description && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span>📖</span>
+                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#8b5e3c' }}>About this Book</span>
+                <div className="flex-1 border-t border-dashed" style={{ borderColor: '#d4b896' }} />
+              </div>
+              <p className="text-sm leading-relaxed italic" style={{ color: '#4a2c17', fontFamily: 'Georgia, serif' }}>
+                {description.length > 500 ? description.slice(0, 500) + '...' : description}
+              </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {(['want-to-read', 'reading', 'finished'] as BookStatus[]).map(s => (
-                <button
-                  key={s}
-                  onClick={() => updateBook(id, { status: s })}
-                  className="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:opacity-80"
-                  style={{
-                    background: book.status === s ? '#2d1a0a' : '#f5e6cc',
-                    color: book.status === s ? '#f0c988' : '#8b5e3c',
-                    border: `1px solid ${book.status === s ? '#2d1a0a' : '#d4b896'}`,
-                  }}
-                >
-                  {STATUS_LABELS[s]}
-                </button>
-              ))}
+          )}
+
+          {/* Subjects */}
+          {subjects.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span>🏷️</span>
+                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#8b5e3c' }}>Subjects</span>
+                <div className="flex-1 border-t border-dashed" style={{ borderColor: '#d4b896' }} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {subjects.map(s => (
+                  <span
+                    key={s}
+                    className="text-xs px-3 py-1 rounded-xl italic"
+                    style={{ background: '#f5e6cc', color: '#4a2c17', border: '1px solid #d4b896' }}
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Divider */}
-          <div className="flex items-center gap-2">
-            <div className="flex-1 border-t" style={{ borderColor: '#d4b896' }} />
-            <span className="text-xs" style={{ color: '#c9721e' }}>✦</span>
-            <div className="flex-1 border-t" style={{ borderColor: '#d4b896' }} />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Link
-              href="/add"
-              className="flex-1 text-center py-3 rounded-xl font-medium text-sm transition-all hover:opacity-90"
-              style={{ background: '#2d1a0a', color: '#f0c988' }}
-            >
-              🌿 Log another book
-            </Link>
-            <button
-              onClick={handleDelete}
-              className="px-5 py-3 rounded-xl font-medium text-sm transition-all hover:opacity-80"
-              style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca' }}
-            >
-              Remove
-            </button>
-          </div>
+          <BookDetailClient book={book} />
         </div>
       </div>
     </div>

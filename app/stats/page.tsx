@@ -1,10 +1,8 @@
-'use client';
-
 import Link from 'next/link';
-import { useBooks } from '@/lib/BookContext';
+import { getBooks } from '@/lib/actions';
 
-export default function StatsPage() {
-  const { books } = useBooks();
+export default async function StatsPage() {
+  const books = await getBooks();
 
   const finished = books.filter(b => b.status === 'finished');
   const reading = books.filter(b => b.status === 'reading');
@@ -39,8 +37,6 @@ export default function StatsPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
-
-      {/* Header */}
       <div className="text-center mb-10">
         <div className="text-3xl mb-2">📊 🍂 ☕</div>
         <h1 className="text-3xl font-bold mb-1" style={{ color: '#2d1a0a', fontFamily: 'Georgia, serif' }}>
@@ -59,15 +55,13 @@ export default function StatsPage() {
           <p className="text-6xl mb-4">🌿</p>
           <p className="text-xl italic mb-2" style={{ color: '#4a2c17', fontFamily: 'Georgia, serif' }}>No stats yet</p>
           <p className="mb-6 text-sm" style={{ color: '#8b5e3c' }}>add some books to see your reading journey</p>
-          <Link href="/add" className="inline-block px-6 py-3 rounded-xl font-medium"
+          <Link href="/search" className="inline-block px-6 py-3 rounded-xl font-medium"
             style={{ background: '#2d1a0a', color: '#f0c988' }}>
-            🌿 Log a book
+            🔍 Find a book
           </Link>
         </div>
       ) : (
         <div className="space-y-6">
-
-          {/* Stat cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {statCards.map(({ label, value, emoji }) => (
               <div
@@ -82,7 +76,6 @@ export default function StatsPage() {
             ))}
           </div>
 
-          {/* Rating distribution */}
           {ratedBooks.length > 0 && (
             <div
               className="rounded-2xl p-6"
@@ -114,7 +107,6 @@ export default function StatsPage() {
             </div>
           )}
 
-          {/* Top genres */}
           {topGenres.length > 0 && (
             <div
               className="rounded-2xl p-6"
@@ -143,7 +135,6 @@ export default function StatsPage() {
             </div>
           )}
 
-          {/* Finished books list */}
           {finished.length > 0 && (
             <div
               className="rounded-2xl p-6"

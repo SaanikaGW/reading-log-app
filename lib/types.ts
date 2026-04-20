@@ -12,4 +12,5 @@ export interface Book {
   rating?: number;
   notes?: string;
   coverImage?: string;
+  ol_key?: string;
 }

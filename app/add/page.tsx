@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useBooks } from '@/lib/BookContext';
+import { addBook } from '@/lib/actions';
 import { BookStatus } from '@/lib/types';
 
 const inputStyle: React.CSSProperties = {
@@ -27,8 +27,9 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function AddBookPage() {
-  const { addBook } = useBooks();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [submitted, setSubmitted] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -43,8 +44,6 @@ export default function AddBookPage() {
     coverImage: '',
   });
 
-  const [submitted, setSubmitted] = useState(false);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -53,21 +52,22 @@ export default function AddBookPage() {
     e.preventDefault();
     if (!form.title.trim() || !form.author.trim()) return;
 
-    addBook({
-      title: form.title.trim(),
-      author: form.author.trim(),
-      genre: form.genre.trim(),
-      pageCount: form.pageCount ? parseInt(form.pageCount) : 0,
-      startDate: form.startDate || undefined,
-      finishDate: form.finishDate || undefined,
-      status: form.status,
-      rating: form.rating ? parseInt(form.rating) : undefined,
-      notes: form.notes.trim() || undefined,
-      coverImage: form.coverImage.trim() || undefined,
+    startTransition(async () => {
+      await addBook({
+        title: form.title.trim(),
+        author: form.author.trim(),
+        genre: form.genre.trim(),
+        pageCount: form.pageCount ? parseInt(form.pageCount) : 0,
+        startDate: form.startDate || undefined,
+        finishDate: form.finishDate || undefined,
+        status: form.status,
+        rating: form.rating ? parseInt(form.rating) : undefined,
+        notes: form.notes.trim() || undefined,
+        coverImage: form.coverImage.trim() || undefined,
+      });
+      setSubmitted(true);
+      setTimeout(() => router.push('/'), 1200);
     });
-
-    setSubmitted(true);
-    setTimeout(() => router.push('/'), 1200);
   };
 
   if (submitted) {
@@ -84,13 +84,9 @@ export default function AddBookPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
-      {/* Header */}
       <div className="text-center mb-8">
         <div className="text-3xl mb-2">🌿 📖 🌿</div>
-        <h1
-          className="text-3xl font-bold mb-1"
-          style={{ color: '#2d1a0a', fontFamily: 'Georgia, serif' }}
-        >
+        <h1 className="text-3xl font-bold mb-1" style={{ color: '#2d1a0a', fontFamily: 'Georgia, serif' }}>
           Log a New Book
         </h1>
         <p className="italic text-sm" style={{ color: '#8b5e3c' }}>add it to your reading shelf</p>
@@ -107,7 +103,6 @@ export default function AddBookPage() {
         style={{ background: '#fdf5e8', border: '1px solid #d4b896', boxShadow: '0 2px 12px rgba(45,26,10,0.1)' }}
       >
         <div className="grid grid-cols-1 gap-6">
-
           <div>
             <label style={labelStyle}>📚 Title *</label>
             <input name="title" value={form.title} onChange={handleChange}
@@ -153,7 +148,6 @@ export default function AddBookPage() {
             </div>
           </div>
 
-          {/* Star rating */}
           <div>
             <label style={labelStyle}>⭐ Rating</label>
             <div className="flex gap-2 items-center">
@@ -191,7 +185,6 @@ export default function AddBookPage() {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="flex items-center gap-2 my-6">
           <div className="flex-1 border-t" style={{ borderColor: '#d4b896' }} />
           <span className="text-sm" style={{ color: '#c9721e' }}>✦</span>
@@ -201,10 +194,11 @@ export default function AddBookPage() {
         <div className="flex gap-3">
           <button
             type="submit"
-            className="flex-1 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
+            disabled={isPending}
+            className="flex-1 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90 disabled:opacity-60"
             style={{ background: '#2d1a0a', color: '#f0c988' }}
           >
-            🌿 Add to Shelf
+            {isPending ? 'Saving...' : '🌿 Add to Shelf'}
           </button>
           <button
             type="button"
