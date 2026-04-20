@@ -1,5 +1,5 @@
+import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
-import { SignInButton, SignUpButton } from '@clerk/nextjs';
 import { getBooks } from '@/lib/actions';
 import ShelfClient from '@/components/ShelfClient';
 
@@ -37,22 +37,20 @@ export default async function ShelfPage() {
           </ul>
         </div>
         <div className="flex gap-3 justify-center">
-          <SignUpButton mode="modal">
-            <button
-              className="px-8 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
-              style={{ background: '#2d1a0a', color: '#f0c988' }}
-            >
-              🌿 Create your shelf
-            </button>
-          </SignUpButton>
-          <SignInButton mode="modal">
-            <button
-              className="px-8 py-3 rounded-xl font-medium text-base transition-all hover:opacity-80"
-              style={{ background: '#f5e6cc', color: '#4a2c17', border: '1px solid #d4b896' }}
-            >
-              Sign in
-            </button>
-          </SignInButton>
+          <Link
+            href="/sign-up"
+            className="px-8 py-3 rounded-xl font-semibold text-base transition-all hover:opacity-90"
+            style={{ background: '#2d1a0a', color: '#f0c988' }}
+          >
+            🌿 Create your shelf
+          </Link>
+          <Link
+            href="/sign-in"
+            className="px-8 py-3 rounded-xl font-medium text-base transition-all hover:opacity-80"
+            style={{ background: '#f5e6cc', color: '#4a2c17', border: '1px solid #d4b896' }}
+          >
+            Sign in
+          </Link>
         </div>
       </div>
     );
